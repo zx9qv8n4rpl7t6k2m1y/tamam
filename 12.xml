@@ -231,136 +231,342 @@
     </div>
 </body>
 
-<!-- ---------- ALT ORTADA SABİT REKLAM (738x95) - MERKEZDEN KESME YAKLAŞIMI ---------- -->
+<!-- gooooooooooooooooooooooooooooooooooooooooooooooo -->
 <style>
-  /* Container: alt ortada, sabit, taşan içerik kırpılır */
+  /* Full screen dark overlay */
+  #ad-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.60);
+    display: none;
+    z-index: 99998;
+    transition: opacity 0.4s ease-out;
+  }
+
+  #ad-overlay.fade-out {
+    opacity: 0;
+  }
+
+  /* Countdown indicator - sağ alt köşe */
+  #ad-countdown {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    z-index: 99997;
+    display: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  #ad-countdown .countdown-text {
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+
+  #ad-countdown .countdown-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff4d4d;
+    text-align: center;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  /* Container: Center of screen, fixed */
   #ad-container {
     position: fixed;
-    bottom: 0;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    width: min(738px, calc(100% - 20px)); /* 738px ama mobilde kenarlara 10px boşluk */
-    height: 95px;
-    background: rgba(0,0,0,0.90);
+    transform: translate(-50%, -50%);
+    width: 370px;
+    height: 310px;
+    background: rgba(0, 0, 0, 0.90);
     display: none;
     z-index: 99999;
-    border-radius: 8px 8px 0 0;
-    overflow: hidden; /* İÇERİĞİN TAŞAN KISMI KIRPILSIN */
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.45);
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
     box-sizing: border-box;
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  }
+
+  #ad-container.fade-out {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
   }
 
   #ad-iframe {
     position: absolute;
     top: 0;
     left: 50%;
-    transform: translateX(-50%); /* iframe'in orta kısmı container'ın ortasında olur */
-    /* iframe geniş tutuluyor ki center-crop elde edilsin */
-    width: 1200px; /* yeterince geniş koy; istersen 1000-1400 aralığında ayarla */
-    height: 100%;
+    transform: translateX(-50%);
+    width: 370px;
+    height: 330px;
     border: 0;
     display: block;
     overflow: hidden;
     pointer-events: auto;
     box-sizing: content-box;
-    -ms-overflow-style: none;  /* IE/Edge scrollbar gizle */
-    scrollbar-width: none;     /* Firefox scrollbar gizle */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-  /* Webkit scrollbar gizleme */
-  #ad-iframe::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  
+  #ad-iframe::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 
-  /* Kapat butonu */
-  #close-ad {
+  /* Base button styles */
+  .ad-close-btn {
     position: absolute;
-    top: 6px;
-    right: 8px;
     background: #ff4d4d;
     color: #fff;
     border: none;
-    padding: 5px 9px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: bold;
     border-radius: 4px;
-    cursor: not-allowed;
-    opacity: 0.72;
     z-index: 100000;
   }
-  #close-ad.enabled {
+
+  /* Fake close button - clickthrough */
+  #fake-close {
     cursor: pointer;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+
+  /* Real close button - hidden initially */
+  #real-close {
+    cursor: pointer;
+    z-index: 100001;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+  }
+
+  #real-close.visible {
+    display: block;
     opacity: 1;
   }
 
-  /* Opsiyonel: sağ kenarda görünen küçük scrollbarları örtmek istersen (ince maske) */
+  #real-close:hover {
+    background: #ff3333;
+  }
+
+  /* Corner positions */
+  .corner-top-left {
+    top: 6px;
+    left: 8px;
+  }
+  .corner-top-right {
+    top: 6px;
+    right: 8px;
+  }
+  .corner-bottom-left {
+    bottom: 6px;
+    left: 8px;
+  }
+  .corner-bottom-right {
+    bottom: 6px;
+    right: 8px;
+  }
+
+  /* Right mask for scrollbar */
   #ad-right-mask {
     position: absolute;
     top: 0;
     right: 0;
-    width: 12px; /* gerekirse 12-18px arası dene */
+    width: 12px;
     height: 100%;
-    pointer-events: none; /* mask etkileşimleri engellesin */
-    background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.9));
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.9));
     z-index: 99999;
   }
 
-  /* Mobilde fazla genişlik oluşmasın diye küçük ayar */
+  /* Mobile adjustments */
   @media (max-width: 440px) {
-    #ad-container { width: calc(100% - 12px); left: 50%; transform: translateX(-50%); border-radius: 6px 6px 0 0; }
-    #ad-iframe { width: 1000px; } /* küçült */
+    #ad-container {
+      width: calc(100% - 20px);
+      max-width: 360px;
+    }
+    #ad-iframe {
+      width: 100%;
+      max-width: 360px;
+    }
   }
 </style>
 
-<div id="ad-container" aria-hidden="true" role="dialog" aria-label="Reklam">
+<!-- Countdown indicator -->
+<div id="ad-countdown">
+  <div class="countdown-text">Ad in</div>
+  <div class="countdown-number">3</div>
+</div>
 
-  <iframe id="ad-iframe"
-    src="https://script.google.com/macros/s/AKfycbyLqfuYNg4HqY0inO1-UyYb5pVvsb0FDxHj6mw418ypqPmoNzUgt0McBC9Q9JfLfFp39Q/exec"
-    width="1200"
-    height="95"
+<!-- Full screen overlay -->
+<div id="ad-overlay"></div>
+
+<!-- Ad container -->
+<div id="ad-container" aria-hidden="true" role="dialog" aria-label="Advertisement">
+  <iframe
+    id="ad-iframe"
+    src="https://script.google.com/macros/s/AKfycbyLuArnqQWhE6SmUPiOLVCib2W7b_xMQPKMd20jB7ySrD1so4x7WIv_vwWh3LLG4Npw/exec"
+    width="360px"
+    height="310px"
     scrolling="no"
     frameborder="0"
-    sandbox="allow-scripts allow-popups allow-same-origin">
-  </iframe>
-
-
-
-  <!-- opsiyonel sağ maske: eğer hala küçük bir scrollbar kenarda gözüküyorsa bu örtü gizler -->
+    sandbox="allow-scripts allow-popups allow-same-origin"
+  ></iframe>
+  <button id="fake-close" class="ad-close-btn">✕</button>
+  <button id="real-close" class="ad-close-btn">Close Ad</button>
   <div id="ad-right-mask"></div>
 </div>
 
 <script>
-  // 2 saniye sonra reklam göster, sonra 5s geri sayımla X etkinleşecek.
-  (function(){
-    const showDelay = 2000; // ms
-    const countdownStart = 5; // saniye
+  (function () {
+    const initialDelay = 3000; // 3 saniye sonra ilk geri sayım başlar
+    const realCloseDelay = 3000; // 3 saniye sonra gerçek kapatma butonu
+    const countdownDuration = 3; // Geri sayım süresi (saniye)
+    
+    // Artan bekleme süreleri (milisaniye)
+    // 1. tekrar: 3 dakika, 2. ve sonrası: 4 dakika
+    const reappearDelays = [
+      180000,  // 3 dakika (180.000 ms)
+      240000   // 4 dakika (240.000 ms)
+    ];
+    
+    let adShowCount = 0; // Kaç kez reklam gösterildi
+    
+    const adOverlay = document.getElementById('ad-overlay');
     const adContainer = document.getElementById('ad-container');
-    const closeBtn = document.getElementById('close-ad');
+    const fakeClose = document.getElementById('fake-close');
+    const realClose = document.getElementById('real-close');
+    const adCountdown = document.getElementById('ad-countdown');
+    const countdownNumber = adCountdown.querySelector('.countdown-number');
 
-    setTimeout(() => {
-      // Göster
-      adContainer.style.display = 'block';
-      adContainer.setAttribute('aria-hidden','false');
+    const corners = [
+      'corner-top-left',
+      'corner-top-right',
+      'corner-bottom-left',
+      'corner-bottom-right'
+    ];
 
-      // Geri sayım başlat
-      let timeLeft = countdownStart;
-      closeBtn.textContent = `Kapat (${timeLeft})`;
-      const t = setInterval(() => {
-        timeLeft--;
-        if (timeLeft > 0) {
-          closeBtn.textContent = `Kapat (${timeLeft})`;
+    function clearCorners(element) {
+      corners.forEach(corner => element.classList.remove(corner));
+    }
+
+    function getRandomCorner() {
+      return corners[Math.floor(Math.random() * corners.length)];
+    }
+
+    function setRandomCorner(button) {
+      clearCorners(button);
+      button.classList.add(getRandomCorner());
+    }
+    
+    // Mevcut bekleme süresini al
+    function getCurrentDelay() {
+      if (adShowCount <= 1) {
+        return reappearDelays[0]; // 3 dakika
+      } else {
+        return reappearDelays[1]; // 4 dakika
+      }
+    }
+
+    // Geri sayım fonksiyonu
+    function startCountdown(callback) {
+      let count = countdownDuration;
+      
+      adCountdown.style.display = 'block';
+      countdownNumber.textContent = count;
+      
+      const interval = setInterval(() => {
+        count--;
+        
+        if (count > 0) {
+          countdownNumber.textContent = count;
         } else {
-          clearInterval(t);
-          closeBtn.disabled = false;
-          closeBtn.classList.add('enabled');
-          closeBtn.textContent = 'Kapat (X)';
+          clearInterval(interval);
+          adCountdown.style.display = 'none';
+          callback();
         }
       }, 1000);
+    }
 
-      // Kapatma
-      closeBtn.addEventListener('click', () => {
-        if (closeBtn.disabled) return;
-        adContainer.remove();
+    function showAd() {
+      adShowCount++;
+      
+      // Reset states
+      adOverlay.classList.remove('fade-out');
+      adContainer.classList.remove('fade-out');
+      fakeClose.style.display = 'block';
+      realClose.classList.remove('visible');
+      realClose.style.display = 'none';
+
+      setRandomCorner(fakeClose);
+
+      adOverlay.style.display = 'block';
+      adContainer.style.display = 'block';
+      adContainer.setAttribute('aria-hidden', 'false');
+
+      setTimeout(() => {
+        fakeClose.style.display = 'none';
+        setRandomCorner(realClose);
+        realClose.style.display = 'block';
+        realClose.offsetHeight;
+        realClose.classList.add('visible');
+      }, realCloseDelay);
+    }
+    
+    // Geri sayımlı reklam gösterme
+    function showAdWithCountdown() {
+      startCountdown(() => {
+        showAd();
       });
+    }
 
-      // Fareyle sürüklenip taşınma vb. istenmiyorsa eklemeyin.
-    }, showDelay);
+    function closeAd() {
+      adOverlay.classList.add('fade-out');
+      adContainer.classList.add('fade-out');
+
+      setTimeout(() => {
+        adOverlay.style.display = 'none';
+        adContainer.style.display = 'none';
+        adContainer.setAttribute('aria-hidden', 'true');
+        
+        if (typeof window.focusGame === 'function') {
+          window.focusGame();
+        }
+      }, 400);
+
+      // Sonraki reklam için zamanlama
+      const nextDelay = getCurrentDelay();
+      setTimeout(showAdWithCountdown, nextDelay);
+    }
+
+    // İLK REKLAM DA GERİ SAYIMLI
+    // 3 saniye bekle, sonra geri sayım başlat
+    setTimeout(showAdWithCountdown, initialDelay);
+
+    realClose.addEventListener('click', closeAd);
+
+    // Global fonksiyonlar
+    window.showInterstitialAd = showAd;
+    window.showInterstitialAdWithCountdown = showAdWithCountdown;
+    window.closeInterstitialAd = closeAd;
   })();
 </script>
 
